@@ -1,0 +1,56 @@
+kind: workflow  # or "agent"
+name: CustomerSupportWorkflow
+description: Handles incoming customer support requests.
+trigger:
+  type: webhook
+  endpoint: /support
+steps:
+  - name: AnalyzeIntent
+    type: nlp
+    model: "intent-analysis-model"
+    input: ${{trigger.request.body.message}}
+    output: ${{steps.AnalyzeIntent.intent}}
+  - name: RouteRequest
+    type: conditional
+    conditions:
+      - ${{steps.AnalyzeIntent.intent}} == "billing" : ${{steps.HandleBilling.execute}}
+      - ${{steps.AnalyzeIntent.intent}} == "technical" : ${{steps.HandleTechnical.execute}}
+  - name: HandleBilling
+    type: agent
+    agent: BillingAgent # Reference to an agent defined below
+    input: ${{trigger.request.body}}
+  - name: HandleTechnical
+    type: agent
+    agent: TechnicalSupportAgent # Reference to an agent defined below
+
+
+kind: agent
+name: BillingAgent
+description: Specializes in billing inquiries.
+goals:
+  - Resolve billing issues.
+  - Provide billing information.
+capabilities:
+  - access billing records
+  - process payments
+tools:
+  - name: StripeAPI
+    type: api
+    configuration:
+      api_key: YOUR_STRIPE_API_KEY
+
+
+kind: agent
+name: TechnicalSupportAgent
+description: Provides technical support.
+goals:
+  - Troubleshoot technical problems.
+  - Provide technical guidance.
+capabilities:
+  - access knowledge base
+  - analyze system logs
+tools:
+  - name: KnowledgeBaseAPI
+    type: api
+    configuration:
+      endpoint: https://kb.example.com/api
