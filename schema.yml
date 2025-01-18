@@ -23,8 +23,8 @@ definitions:
         properties:
           type:
             type: string
-            description: "Type of trigger (e.g., webhook, scheduled, event)"
-            enum: [webhook, scheduled, event]
+            description: "Type of trigger (e.g., webhook, scheduled)"
+            enum: [webhook, scheduled]
           endpoint:
             type: string
             description: "Endpoint for webhook triggers"

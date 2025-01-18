@@ -1,0 +1,78 @@
+name: My Awesome Workflow
+description: This workflow does amazing things!
+
+# Event configuration
+Event:
+  type: webhook  # or 'api', 'schedule', etc.
+  options:
+    url: https://my-app.com/webhook  # Webhook URL
+    # ... other event-specific options (e.g., authentication, headers)
+
+# Data sources (optional)
+dataSources:
+  - name: myDatabase
+    type: postgresql
+    options:
+      connectionString: postgresql://user:password@host:port/database
+  - name: myAPI
+    type: rest
+    options:
+      baseUrl: https://api.example.com
+      headers:
+        Authorization: Bearer {{apiKey}} # Using templating for dynamic values
+
+# Variables (optional)
+variables:
+  minimum_purchase: 100
+  greeting: "Hello, {{user.name}}!"
+
+# Steps (the actual workflow steps)
+steps:
+  - id: step1
+    name: Fetch User Data
+    type: action # or 'condition', 'loop', etc.
+    action:
+      type: apiCall
+      integration: myAPI # Reference to a defined integration
+      endpoint: /users/{{userId}}
+      method: GET
+      # ... other action-specific options (e.g., body, mapping)
+    outputs:
+      - user: data.user # Assign output to a variable named 'user'
+
+  - id: step2
+    name: Check User Age
+    type: condition
+    condition: user.age > 18
+    then:
+      - step3
+    else:
+      - step4
+
+  - id: step3
+    name: Send Welcome Email
+    type: action
+    action:
+      type: sendEmail
+      to: user.email
+      subject: Welcome to our platform!
+      body: {{greeting}}
+
+  - id: step4
+    name: Log User Age
+    type: action
+    action:
+      type: log
+      message: User age is below 18.
+
+# Error handling (optional)
+errorHandler:
+  - type: retry
+    retries: 3
+    delay: 10 # seconds
+  - type: notify
+    webhookUrl: https://my-app.com/error
+
+# Rate limiting (optional)
+rateLimit:
+  requestsPerMinute: 60

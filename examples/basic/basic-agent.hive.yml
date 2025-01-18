@@ -1,0 +1,55 @@
+kind: agent
+
+name: My Customer Support Agent
+description: This agent handles customer inquiries and resolves support tickets.
+
+# LLM Provider
+provider:
+  name: openai  # or 'gemini', 'anthropic', etc.
+  model: gpt-4  # or 'text-davinci-003', 'claude-2', etc.
+  # ... other provider-specific options (e.g., temperature, max_tokens)
+
+# Tools (optional)
+tools:
+  - name: search
+    description: Search the web for information.
+    type: webSearch # or 'databaseLookup', 'codeExecution', etc.
+    options:
+    # ... tool-specific options (e.g., search engine, API keys)
+  - name: knowledgeBase
+    description: Access the internal knowledge base.
+    type: knowledgeBase
+    options:
+      path: ./knowledge-base.json
+
+# Secrets (optional)
+secrets:
+  - name: myApiKey
+    valueFrom: env.MY_API_KEY # Reference an environment variable
+
+# Data (optional)
+data:
+  - name: customerInfo
+    source: database # or 'api', 'file', etc.
+    options:
+    # ... options to fetch customer data
+
+# Context (optional)
+context:
+  - conversationHistory: true # Include conversation history in the context
+  - currentTask: true # Include the current task in the context
+  - relevantData: customerInfo # Include the 'customerInfo' data in the context
+
+# Personality (optional)
+personality:
+  - tone: friendly # or 'formal', 'helpful', etc.
+  - style: concise # or 'detailed', 'humorous', etc.
+
+# Other options (optional)
+options:
+  - maxTurns: 10 # Limit the number of conversation turns
+  - errorHandling:
+      - type: retry
+        retries: 3
+  - logging:
+      level: info # or 'debug', 'error', etc.
