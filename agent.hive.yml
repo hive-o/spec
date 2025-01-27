@@ -1,0 +1,68 @@
+name: My Customer Support Agent
+kind: agent
+description: This agent handles customer inquiries and resolves support tickets.
+
+# Data sources (optional)
+data-sources:
+  - name: myDatabase
+    type: postgresql
+    options:
+      connectionString: postgresql://user:password@host:port/database
+  - name: myAPI
+    type: rest
+    options:
+      baseUrl: https://api.example.com
+      headers:
+        Authorization: Bearer {{ apiKey }} # Using templating for dynamic values
+
+maxTurns: 10 # Limit the number of conversation turns
+
+# Variables (optional)
+variables:
+  minimum_purchase: 100
+  greeting: "Hello, {{ user.name }}!"
+
+# Error handling (optional)
+errorHandler:
+  retry:
+    count: 3
+    delay: 10
+  notify:
+    url: https://my-app.com/error
+
+# LLM Provider
+provider:
+  name: openai  # or 'gemini', 'anthropic', etc.
+  model: gpt-4  # or 'text-davinci-003', 'claude-2', etc.
+  # ... other provider-specific options (e.g., temperature, max_tokens)
+
+# Context (optional)
+context:
+  memory: true # (optional) defaults to false
+  personality:
+    tone: friendly # or 'formal', 'helpful', etc.
+    style: concise # or 'detailed', 'humorous', etc.
+  initial: You are a customer support agent # provide initial prompt to the agent before it starts processing user inputs
+
+# Tools (optional)
+tools:
+  - id: asasd
+    name: email
+    description: send email
+    uses: hive/tool/emailer
+    inputs:
+      type: sendEmail
+      to: user.email
+      subject: Welcome to our platform!
+      body: {{ greeting }}
+    # ... tool-specific options (e.g., search engine, API keys)
+
+  - name: knowledgeBase
+    description: Access the internal knowledge base.
+    function:
+      ref: path/to/file # ... any programming language (javascript and python)
+      compiler:
+        language: python # or node, ruby etc.
+        version: 3
+    inputs:
+      path: ./knowledge-base.json

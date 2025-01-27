@@ -1,0 +1,477 @@
+type: object
+
+allOf:
+  - if:
+      properties:
+        kind:
+          const: blueprint
+    then:
+      $ref: '#/$defs/blueprint'
+  - if:
+      properties:
+        kind:
+          const: agent
+    then:
+      $ref: '#/$defs/agent'
+
+$defs:
+  inputs:
+    additionalProperties:
+      type: object
+      description: Named inputs within the 'call' event
+      properties:
+        type:
+          type: string
+          description: specify the data-type of the parameter
+          enum: [ boolean, number, string ]
+        required:
+          type: boolean
+          description: specify if the parameter is required or not
+        default:
+          type: string
+          description: define a default value for the parameter
+      required:
+        - type
+
+  trigger:
+    type: object
+    properties:
+      call:
+        type: object
+        properties:
+          inputs:
+            $ref: '#/$defs/inputs'
+      schedule:
+        type: array
+        description: A single blueprint can be triggered by multiple cron jobs
+        items:
+          type: object
+          properties:
+            cron:
+              type: string
+              description: a cron format schedule string
+          required:
+            - cron
+
+  data-sources:
+    postgresql:
+      type: object
+      properties:
+        name:
+          type: string
+          description: identity of the data-source
+        type:
+          type: string
+          const: postgresql
+        inputs:
+          type: object
+          properties:
+            connection:
+              type: string
+          required:
+            - connection
+      required:
+        - name
+        - type
+        - inputs
+    rest:
+      type: object
+      properties:
+        name:
+          type: string
+          description: identity of the data-source
+        type:
+          type: string
+          const: rest
+        inputs:
+          type: object
+          properties:
+            url:
+              type: string
+            headers:
+              type: object
+          required:
+            - url
+      required:
+        - name
+        - type
+        - inputs
+
+  variables:
+    type: object
+    additionalProperties:
+      oneOf:
+        - type: string
+        - type: number
+        - type: boolean
+
+  error-handler:
+    type: object
+    properties:
+      retry:
+        type: object
+        properties:
+          count:
+            type: number
+          delay:
+            type: number
+        required:
+          - count
+          - delay
+      notify:
+        type: object
+        properties:
+          url:
+            type: string
+          method:
+            type: string
+            enum: [GET, PUT, POST, DELETE, PATCH]
+        required:
+          - url
+
+  block-types:
+    defaults:
+      properties:
+        name:
+          type: string
+        id:
+          type: string
+        requires:
+          type: array
+          items:
+            type: string
+        description:
+          type: string
+        outputs:
+          type: array
+          items:
+            type: object
+            additionalProperties:
+              oneOf:
+                - type: string
+                - type: number
+                - type: boolean
+      required:
+        - name
+    api:
+      allOf:
+        - $ref: '#/$defs/block-types/defaults'
+        - properties:
+            type:
+              type: string
+              const: api
+            api:
+              type: object
+              properties:
+                endpoint:
+                  type: string
+                method:
+                  type: string
+                  enum: [GET, PUT, POST, DELETE, PATCH]
+          required:
+            - api
+    loop:
+      allOf:
+        - $ref: '#/$defs/block-types/defaults'
+        - properties:
+            type:
+              type: string
+              const: loop
+            loop:
+              type: object
+              properties:
+                times:
+                  type: number
+                interval:
+                  type: number
+                until:
+                  type: string
+          required:
+            - loop
+    condition:
+      allOf:
+        - $ref: '#/$defs/block-types/defaults'
+        - properties:
+            type:
+              type: string
+              const: condition
+            condition:
+              type: string
+            then:
+              type: array
+              items:
+                type: string
+                description: reference id of another step in the sequence
+            else:
+              type: array
+              items:
+                type: string
+                description: reference id of another step in the sequence
+          required:
+            - condition
+            - then
+    route:
+      allOf:
+        - $ref: '#/$defs/block-types/defaults'
+        - properties:
+            type:
+              type: string
+              const: route
+            route:
+              type: array
+              items:
+                type: object
+                properties:
+                  condition:
+                    type: string
+                  id:
+                    type: string
+                  inputs:
+                    $ref: '#/$defs/inputs'
+                required:
+                  - condition
+                  - id
+          required:
+           - route
+    log:
+      allOf:
+        - $ref: '#/$defs/block-types/defaults'
+        - properties:
+            type:
+              type: string
+              const: log
+            message:
+              type: string
+          required:
+            - message
+    prompt:
+      allOf:
+        - $ref: '#/$defs/block-types/defaults'
+        - properties:
+            type:
+              type: string
+              const: prompt
+            prompt:
+              type: string
+          required:
+            - prompt
+
+  tool-types:
+    defaults:
+      properties:
+        name:
+          type: string
+        id:
+          type: string
+        description:
+          type: string
+        inputs:
+          $ref: '#/$defs/inputs'
+      required:
+        - name
+    uses:
+      allOf:
+        - $ref: '#/$defs/tool-types/defaults'
+        - properties:
+            uses:
+              type: string
+          required:
+            - uses
+    function:
+      allOf:
+        - $ref: '#/$defs/tool-types/defaults'
+        - properties:
+            function:
+              type: object
+              properties:
+                ref:
+                  type: string
+                compiler:
+                  type: object
+                  properties:
+                    language:
+                      type: string
+                      enum: [node, python]
+                    version:
+                      type: string
+                  required:
+                    - language
+                    - version
+              required:
+                - ref
+                - compiler
+          required:
+            - function
+
+  # Schema Definition of a Hive Agentic blueprint
+  blueprint:
+    type: object
+    properties:
+      name:
+        type: string
+        description: "Unique name of the blueprint"
+      description:
+        type: string
+        description: "Description of the blueprint's purpose"
+      on:
+        $ref: '#/$defs/trigger'
+      data-sources:
+        type: array
+        items:
+          type: object
+          allOf:
+            - if:
+                properties:
+                  kind:
+                    const: postgresql
+              then:
+                $ref: '#/$defs/data-sources/postgresql'
+            - if:
+                properties:
+                  kind:
+                    const: rest
+              then:
+                $ref: '#/$defs/data-sources/rest'
+      variables:
+        $ref: '#/$defs/variables'
+      error-handler:
+        $ref: '#/$defs/error-handler'
+      rate-limit:
+        type: object
+        properties:
+          limit:
+            type: number
+            description: maximum number of requests allowed within a given time window.
+          ttl:
+            type: number
+            description: time window (in milliseconds) for which the limit applies.
+      blocks:
+        type: array
+        items:
+          type: object
+          oneOf:
+            - if:
+                properties:
+                  kind:
+                    const: api
+              then:
+                $ref: '#/$defs/block-types/api'
+            - if:
+                properties:
+                  kind:
+                    const: condition
+              then:
+                $ref: '#/$defs/block-types/condition'
+            - if:
+                properties:
+                  kind:
+                    const: loop
+              then:
+                $ref: '#/$defs/block-types/loop'
+            - if:
+                properties:
+                  kind:
+                    const: prompt
+              then:
+                $ref: '#/$defs/block-types/prompt'
+            - if:
+                properties:
+                  kind:
+                    const: route
+              then:
+                $ref: '#/$defs/block-types/route'
+            - if:
+                properties:
+                  kind:
+                    const: agent
+              then:
+                $ref: '#/$defs/agent'
+          $comment: TODO add support for "#/$defs/blueprint"
+    required:
+      - kind
+      - name
+      - on
+      - blocks
+
+  # Schema Definition of a Hive AI Agent
+  agent:
+    type: object
+    properties:
+      name:
+        type: string
+      description:
+        type: string
+      data-sources:
+        type: array
+        items:
+          type: object
+          allOf:
+            - if:
+                properties:
+                  kind:
+                    const: postgresql
+              then:
+                $ref: '#/$defs/data-sources/postgresql'
+            - if:
+                properties:
+                  kind:
+                    const: rest
+              then:
+                $ref: '#/$defs/data-sources/rest'
+      variables:
+        $ref: '#/defs/variables'
+      error-handler:
+        $ref: '#/$defs/error-handler'
+      provider:
+        type: object
+        properties:
+          name:
+            type: string
+            enum: [openai, gemini, anthropic]
+          model:
+            type: string
+            $comment: TODO make model property value conditional to 'name' value.
+        required:
+          - name
+          - model
+      context:
+        type: object
+        properties:
+          memory:
+            type: boolean
+          personality:
+            type: object
+            properties:
+              tone:
+                type: string
+                enum: [friendly, formal, helpful]
+              style:
+                type: string
+                enum: [concise, detailed, humorous]
+          initial:
+            type: string
+            description: base prompt to set the context of the agent
+        required:
+          - initial
+      tools:
+        type: array
+        items:
+          type: object
+          anyOf:
+            - if:
+                properties:
+                  kind:
+                    const: uses
+              then:
+                $ref: '#/$defs/tool-types/uses'
+            - if:
+                properties:
+                  kind:
+                    const: function
+              then:
+                $ref: '#/$defs/tool-types/function'
+    required:
+      - name
+      - kind
+      - provider
+      - context

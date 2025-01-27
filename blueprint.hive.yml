@@ -1,0 +1,160 @@
+name: new blueprint
+kind: blueprint
+description: This is a basic blueprint
+
+# Event configuration | Trigger
+on:
+  webhook:  # or 'api', 'schedule', etc.
+    url: https://my-app.com/webhook  # Webhook URL
+    # ... other event-specific options (e.g., authentication, headers)
+
+# Data sources (optional)
+data-sources:
+  - name: myDatabase
+    type: postgresql
+    options:
+      connectionString: postgresql://user:password@host:port/database
+  - name: myAPI
+    type: rest
+    options:
+      baseUrl: https://api.example.com
+      headers:
+        Authorization: Bearer {{ apiKey }} # Using templating for dynamic values
+
+# Variables (optional)
+variables:
+  minimum_purchase: 100
+  greeting: "Hello, {{ user.name }}!"
+
+# Error handling (optional)
+error-handler:
+  retry:
+    count: 3
+    delay: 10
+  notify:
+    url: https://my-app.com/error
+
+# Rate limiting (optional)
+rate-limit:
+  requestsPerMinute: 60
+
+blocks:
+  - id: step1
+    name: Fetch User Data
+    type: api # or 'condition', 'loop', 'prompt', 'route', 'agent', 'blueprint' etc.
+    api:
+      endpoint: /users/{{ userId }}
+      method: GET
+      downloadable: true
+      # ... other api-specific options (e.g., body, mapping)
+    outputs:
+      - user: data.user # Assign output to a variable named 'user'
+
+  - id: step2
+    type: loop
+    loop:
+      times: -1 # 1,2,3...-1 (-1 refers to never ending loop)
+      interval: 3 # in milliseconds, amount of time to pause before next cycle
+      until: true # condition for iteration
+
+  - id: step3
+    name: Check User Age
+    type: condition
+    condition: user.age > 18
+    then:
+      - step4
+    else:
+      - step5
+
+  - id: step4
+    name: Send Welcome Email
+    type: agent
+    requires:
+      - step6
+    agent: { owner }/agent/{ name } # all agent configuration options within blueprint will be optional unless explicitly required in agent.hive.yml
+      provider: # (optional) ref agent.hive.yml
+        name: openai
+        model: gpt-4
+      context: # (optional) ref agent.hive.yml
+        initial: You are an HR representative welcoming new employee
+      # .... additional configuration options from agent schema (ref: agent.hive.yml)
+
+  - id: step5
+    name: Log User Age
+    type: agent
+    requires:
+      - step7
+    agent: { owner }/agent/{ name } # or relative path to agent definition file
+
+  - id: step8
+    name: Branch example
+    type: route
+    requires:
+      - step5
+    route:
+      - condition: ""
+        id: 9 # step id
+        inputs:
+          input1:
+      - condition: ""
+        id: 11 # step id
+        inputs:
+          input1:
+      - condition: ""
+        id: 12 # step id
+        inputs:
+          input1:
+
+  - id: step9
+    name: Branch example
+    type: log
+    requires:
+      - step8
+    log:
+      message: step 9 completed
+
+  - id: step10
+    name: Branch example
+    type: log
+    requires:
+      - step4
+    log:
+      message: step 10 completed
+
+  - id: step11
+    name: Branch example
+    type: log
+    requires:
+      - step8
+    log:
+      message: step 11 completed
+
+  - id: step12
+    name: Branch example
+    type: prompt
+    requires:
+      - step8
+    prompt:
+      "something contextual"
+
+  - id: step13
+    name: Branch example
+    type: agent
+    requires:
+      - step12
+    agent: { owner }/agent/{ name }
+
+  - id: step6
+    name: prompt style 1
+    type: prompt
+    prompt:
+      "wqeqweqweqwe"
+
+  - id: step7
+    name: prompt style 2
+    type: prompt
+    prompt:
+      "asdasdasdadwd"
+
+# Scenario 1 -- step1 -> step2 -> step3 - step6 -> step4
+# Scenario 2 -- step1 -> step2 -> step3 - step7 -> step5
