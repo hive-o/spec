@@ -1,6 +1,7 @@
 name: new blueprint
 kind: blueprint
 description: This is a basic blueprint
+$schema: https://schema.hive-o.ai/v/1.1
 
 # Event configuration | Trigger
 on:
