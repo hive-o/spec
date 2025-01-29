@@ -31,10 +31,7 @@ jobs:
           node-version: "lts/*"
 
       - name: Install dependencies
-        run: npm clean-install
-
-      - name: Verify the integrity of provenance attestations and registry signatures for installed dependencies
-        run: npm audit signatures
+        run: yarn install
 
       - name: Release
         env:
