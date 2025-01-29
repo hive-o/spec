@@ -6,5 +6,18 @@
   "repository": "git@github.com:hive-o/spec.git",
   "author": "Open Cipher <8209379+open-cipher@users.noreply.github.com>",
   "license": "MIT",
-  "packageManager": "yarn@4.6.0"
+  "private": true,
+  "scripts": {
+    "commit": "cz"
+  },
+  "packageManager": "yarn@4.6.0",
+  "devDependencies": {
+    "cz-conventional-changelog": "^3.3.0",
+    "semantic-release": "^24.2.1"
+  },
+  "config": {
+    "commitizen": {
+      "path": "./node_modules/cz-conventional-changelog"
+    }
+  }
 }
